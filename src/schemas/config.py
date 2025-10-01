@@ -1,0 +1,74 @@
+from __future__ import annotations
+from pydantic import BaseModel, Field
+from typing import Literal, List
+
+class OnModelColorPriorConfig(BaseModel):
+    tau_base: float = 12.0
+    tau_k: float = 3.0
+    dilate_px: int = 1
+    min_mask_pixels: int = 2000
+    neutral_chroma_thresh: float = 10.0  # if ref chroma < this, enable L-gate
+    l_gate_lo: float = -12.0             # L tolerance below ref L*
+    l_gate_hi: float = +18.0             # L tolerance above ref L*
+    band_top_pct: float = 0.25           # keep 25%..85% vertical band
+    band_bot_pct: float = 0.85
+
+class OnModelSCHPConfig(BaseModel):
+    enabled: bool = True
+    weights_path: str = "weights/schp.pth"   # set to your checkpoint path
+    device: Literal["cpu", "mps", "cuda"] = "mps"
+    include_labels: List[str] = Field(
+        default_factory=lambda: [
+            "upper-clothes", "coat", "dress", "jacket", "t-shirt", "vest", "hoodie", "cardigan", "blouse", "sweater"
+        ]
+    )
+
+class OnModelSAM2Config(BaseModel):
+    enabled: bool = True
+    checkpoint_path: str = "weights/sam2.pt"  # set to your checkpoint
+    points_from_mask: bool = True
+    expand_box_px: int = 16
+
+class OnModelMaskingConfig(BaseModel):
+    method_order: List[Literal["schp", "color_prior", "heuristic"]] = Field(default_factory=lambda: ["schp", "color_prior", "heuristic"])
+    schp: OnModelSCHPConfig = Field(default_factory=OnModelSCHPConfig)
+    sam2: OnModelSAM2Config = Field(default_factory=OnModelSAM2Config)
+    color_prior: OnModelColorPriorConfig = Field(default_factory=OnModelColorPriorConfig)
+    use_crf: bool = False  # requires pydensecrf if True
+
+class PathsConfig(BaseModel):
+    input_dir: str
+    masks_dir: str
+    output_dir: str
+    logs_dir: str
+
+class RunConfig(BaseModel):
+    limit: int = 300
+    num_workers: int = 2
+    save_debug: bool = False
+    write_corrected: bool = True   # 👈 add this
+
+
+class MaskingConfig(BaseModel):
+    erosion_px: int = 2
+    feather_px: int = 2
+    use_sam2_refine: bool = False  # kept for back-compat (unused now)
+    on_model: OnModelMaskingConfig = Field(default_factory=OnModelMaskingConfig)
+    onmodel_color_prior: OnModelColorPriorConfig = Field(default_factory=OnModelColorPriorConfig)  # back-compat
+
+class ColorConfig(BaseModel):
+    mode: Literal["classical", "lut", "diffusion"] = "classical"
+    deltaE_target: float = 2.0
+
+class QCConfig(BaseModel):
+    max_deltaE_median: float = 3.0
+    max_deltaE_p95: float = 8.0
+    min_ssim_L: float = 0.90
+    max_spill_deltaE: float = 0.5
+
+class AppConfig(BaseModel):
+    paths: PathsConfig
+    run: RunConfig = Field(default_factory=RunConfig)
+    masking: MaskingConfig = Field(default_factory=MaskingConfig)
+    color: ColorConfig = Field(default_factory=ColorConfig)
+    qc: QCConfig = Field(default_factory=QCConfig)

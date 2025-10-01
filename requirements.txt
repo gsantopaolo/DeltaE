@@ -1,0 +1,30 @@
+# --- Core ---
+numpy>=1.24
+opencv-python>=4.9.0
+Pillow>=10.3
+scikit-image>=0.22
+scipy>=1.11
+tqdm>=4.66
+pydantic>=2.7
+pyyaml>=6.0.1
+
+# Logging / CLI niceties
+rich>=13.7
+colorlog>=6.8
+
+# --- Masking (still-life via matting) ---
+rembg>=2.0.55
+# Choose ONE onnxruntime depending on your platform (GPU if Linux+NVIDIA):
+onnxruntime>=1.17; platform_system!="Linux"
+# onnxruntime-gpu>=1.17; platform_system=="Linux"
+
+# torch
+torch==2.8.0
+torchvision
+
+# --- Optional (advanced approaches) ---
+# diffusers>=0.28
+# transformers>=4.43
+# accelerate>=0.30
+# safetensors>=0.4.3
+# matplotlib>=3.8  # for debug visualizations

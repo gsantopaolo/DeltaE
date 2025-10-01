@@ -1,0 +1,53 @@
+paths:
+  input_dir: "data/dataset"
+  masks_dir: "data/masks"
+  output_dir: "data/outputs"
+  logs_dir: "data/logs"
+
+run:
+  limit: 10
+  num_workers: 1
+  save_debug: false
+  write_corrected: false   # 👈 set to false if you want MASK-ONLY runs
+
+masking:
+  erosion_px: 2
+  feather_px: 2
+
+  # New on-model pipeline config (SCHP→SAM2→color-prior→heuristic).
+  # If SCHP/SAM2 aren’t set up, it will gracefully fallback to color-prior.
+  on_model:
+    method_order: ["schp", "color_prior", "heuristic"]
+    schp:
+      enabled: true
+      weights_path: "weights/schp.pth"   # put your TorchScript or change path; if missing it falls back
+      device: "mps"
+      include_labels: ["upper-clothes","coat","dress","jacket","t-shirt","vest","hoodie","cardigan","blouse","sweater"]
+    sam2:
+      enabled: true
+      checkpoint_path: "weights/sam2.pt" # if not present, refinement is skipped
+      points_from_mask: true
+      expand_box_px: 16
+    color_prior:
+      tau_base: 12.0
+      tau_k: 3.0
+      dilate_px: 1
+      min_mask_pixels: 2000
+      neutral_chroma_thresh: 10.0
+      l_gate_lo: -12.0
+      l_gate_hi: 18.0
+      band_top_pct: 0.25
+      band_bot_pct: 0.85
+    use_crf: false
+
+color:
+  mode: "classical"
+  deltaE_target: 2.0
+
+qc:
+  max_deltaE_median: 3.0
+  max_deltaE_p95: 8.0
+  min_ssim_L: 0.90
+  max_spill_deltaE: 0.5
+
+
