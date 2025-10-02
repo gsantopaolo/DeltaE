@@ -74,15 +74,17 @@ MPS available: True
 
 ### Sample Images and Weights
 
-**📦 Download Link:** [Google Drive - DeltaE Sample Data](https://drive.google.com/drive/folders/YOUR_LINK_HERE)
+**📦 Download Link:** [Google Drive - DeltaE Sample Data](https://drive.google.com/file/d/1xrt25bMnvq6dnl1xZSSW97zxY6l5u-eH/view?usp=sharing)
+
+```
 
 The package includes:
-- `dataset/` - 10-20 sample image pairs (still-life + on-model)
+- `dataset/` - 300+ sample image pairs (still-life + on-model)
 - `weights/` - Pre-trained model checkpoints
 
-### Manual Setup
+### Setup
 
-After downloading, extract to your project directory:
+After downloading, extract the zip to your project directory:
 
 ```bash
 # Your structure should look like:
@@ -99,14 +101,9 @@ DeltaE/
     └── (Segformer downloads automatically from HuggingFace)
 ```
 
-### Alternative: Download Weights Programmatically
-
-
----
-
 ## Running the Pipeline
 
-### Quick Start
+### Bash
 
 ```bash
 # Process all images in dataset
