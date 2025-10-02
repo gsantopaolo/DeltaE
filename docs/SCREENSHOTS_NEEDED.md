@@ -24,6 +24,11 @@ python -m src.main --config configs/default.yaml --limit 5
 ### 4. **Before/After Comparison** (Medium Priority)
 **Filename**: `docs/images/before_after_comparison.jpg`
 
+**Before/After Comparison - Image 00328**
+Left: Original degraded on-model image (ΔE = 4.18)  
+Right: Color-corrected result (ΔE = 0.21)  
+**Improvement**: 3.97 ΔE units (95.1% reduction in color error)
+
 **What to create**: Side-by-side comparison showing:
 - Left: Original degraded on-model image
 - Right: Corrected on-model image

@@ -177,13 +177,18 @@ Summary: Average improvement of 46% across all images
 ```
 
 ### Visual Examples
+
+#### Triplet comparison 
 ![Triplet Comparison](docs/images/triplet_example.jpg)
 *Left to right: Reference (still-life), Original (before), Corrected (after), Difference Map*
 
-![Spatial Heatmap](docs/images/sci_heatmap_example.jpg)
+#### SCI spatial heatmap
+<img src="docs/images/sci_heatmap_example.jpg" alt="Spatial Heatmap" height="400">
 *SCI spatial heatmap: Green=excellent, Yellow=good, Orange=acceptable, Red=poor correction*
 
+#### Before/After Comparison
 
+#### Console output
 ![Console Output](docs/images/console_output.png)
 *Console summary table with triplet analysis results*
 
