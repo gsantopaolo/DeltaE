@@ -1,45 +1,4 @@
-# Screenshots Needed for Documentation
 
-This document lists all screenshots that should be added to complete the documentation.
-
----
-
-## Directory Structure
-
-All screenshots should be saved in: `docs/images/`
-
----
-
-## Required Screenshots
-
-### 1. **Triplet Comparison** (High Priority)
-**Filename**: `docs/images/triplet_example.jpg`
-
-**What to capture**: One of the generated triplet visualization files from `data/outputs/corrected-on-model-*-triplet.jpg`
-
-**Shows**:
-- 4-panel layout: Reference | Original | Corrected | Difference Maps
-- Clear before/after comparison
-- Difference maps showing improvement (more green on right side)
-
-**Usage**: Main README, evaluation.md
-
----
-
-### 2. **SCI Spatial Heatmap** (High Priority)
-**Filename**: `docs/images/sci_heatmap_example.jpg`
-
-**What to capture**: One of the SCI heatmap files from `data/outputs/corrected-on-model-*-hm.jpg`
-
-**Shows**:
-- Color-coded spatial quality map
-- Green areas (good correction)
-- Red/orange areas (challenging regions)
-- Overlay on corrected image
-
-**Usage**: README, evaluation.md
-
----
 
 ### 3. **Console Output - Summary Table** (High Priority)
 **Filename**: `docs/images/console_output.jpg`

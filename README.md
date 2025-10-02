@@ -188,7 +188,7 @@ Summary: Average improvement of 46% across all images
 
 **[TODO: Add screenshot here - Console output showing summary table with tabulate formatting]**
 
-![Console Output](docs/images/console_output.jpg)
+![Console Output](docs/images/console_output.png)
 *Console summary table with triplet analysis results*
 
 See [Evaluation Documentation](docs/evaluation.md) for complete metrics analysis.
