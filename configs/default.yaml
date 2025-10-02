@@ -56,12 +56,14 @@ masking:
 color:
   # Mode options: "classical" (fast LCh), "ot" (distribution matching), "hybrid" (best of both)
   mode: "hybrid"  # Recommended: hybrid combines histogram matching + global shift
-  deltaE_target: 2.0
+  deltaE_target: 3.0
+  max_iter: 3
+  feedback_strength: 0.7
   
   # OT (Optimal Transport) advanced parameters (only used when mode: "ot")
   ot_num_clusters: 3        # Number of color clusters for multi-color garments (prints, stripes)
+  ot_use_clustering: false  # Changed from true to false - prevents K-means crashes
   ot_reg: 0.1               # Entropic regularization (0.01-0.5, higher=stable, lower=exact but unstable)
-  ot_use_clustering: true   # Enable multi-cluster for complex patterns (vs single OT)
   ot_min_cluster_size: 500  # Minimum pixels per cluster (avoid tiny clusters)
   ot_max_samples: 5000      # Max pixels for OT learning (prevents OOM on large masks)
 

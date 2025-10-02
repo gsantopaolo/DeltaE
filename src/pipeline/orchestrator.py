@@ -145,6 +145,8 @@ def run_pairs(
 
     for i, p in enumerate(pairs, 1):
         try:
+            logger.info("")
+            logger.info(f"🚀 [{i}] Starting processing ID={p.id}")
             logger.info(f" [{i}] ID={p.id} | Loading images")
             om = cv2.imread(str(p.on_model), cv2.IMREAD_COLOR)
             st = cv2.imread(str(p.still_life), cv2.IMREAD_COLOR)
@@ -296,9 +298,25 @@ def run_pairs(
                     
             # Write final corrected image
             cv2.imwrite(str(output_dir / f"corrected-on-model-{p.id}.jpg"), corrected)
+            
+            # MEMORY CLEANUP: Explicitly delete large arrays to prevent leaks
+            del om, st, om_mask, st_mask, om_core, st_core, alpha
+            del corrected, corrected_inside
+            if 'st_rgb' in locals(): del st_rgb
+            if 'st_lab' in locals(): del st_lab
+            if 'sci_results' in locals(): del sci_results
+            if 'triplet_results' in locals(): del triplet_results
+            
+            # Force garbage collection every 10 images
+            if i % 10 == 0:
+                import gc
+                gc.collect()
 
         except Exception as e:
             logger.error(f" [{i}] ID={p.id} failed: {e}")
+            # Cleanup on error too
+            import gc
+            gc.collect()
 
     # --- Generate Triplet Analysis Summary Table ---
     if triplet_summary_results and cfg.qc.enable_triplet_analysis:

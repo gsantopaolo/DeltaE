@@ -78,16 +78,16 @@ class HybridCorrector:
         # Step 1: Histogram matching (distribution alignment)
         if self.use_clustering and om_chroma.shape[0] >= self.min_cluster_size * self.num_clusters:
             corrected_lab = self._histogram_match_clustered(
-                om_lab, om_full_mask, om_chroma, rf_chroma
+                om_lab, om_core_mask, om_chroma, rf_chroma
             )
         else:
             corrected_lab = self._histogram_match_simple(
-                om_lab, om_full_mask, om_chroma, rf_chroma
+                om_lab, om_core_mask, om_chroma, rf_chroma
             )
 
         # Step 2: Global median shift (precise targeting)
         corrected_lab = self._apply_global_shift(
-            corrected_lab, om_full_mask, rf_lab, rf_core_mask
+            corrected_lab, om_core_mask, rf_lab, rf_core_mask
         )
 
         # Convert back
@@ -133,21 +133,21 @@ class HybridCorrector:
         om_chroma: np.ndarray,
         rf_chroma: np.ndarray,
     ) -> np.ndarray:
-        """Multi-cluster histogram matching."""
+        """Multi-cluster histogram matching - safe vectorized version."""
         K = self.num_clusters
         self.logger.info(f"🎨 Hybrid: Multi-cluster ({K}) histogram matching")
 
+        # Make a clean copy to work with
+        out_lab = om_lab.copy()
+        
+        # Cluster the on-model chroma
         kmeans = KMeans(n_clusters=K, random_state=42, n_init=10)
         labels = kmeans.fit_predict(om_chroma)
 
+        # Get coordinates of masked pixels
         ys, xs = np.where(om_mask)
-        n_chroma = om_chroma.shape[0]
-        if len(ys) != n_chroma:
-            ys, xs = ys[:n_chroma], xs[:n_chroma]
         
-        pixel_coords = np.stack([xs, ys], axis=1)
-        out_lab = om_lab.copy()
-
+        # Process each cluster independently
         for k in range(K):
             cluster_mask = (labels == k)
             n_cluster = cluster_mask.sum()
@@ -155,26 +155,33 @@ class HybridCorrector:
             if n_cluster < self.min_cluster_size:
                 continue
 
-            om_cluster_chroma = om_chroma[cluster_mask]
-            cluster_pixels = pixel_coords[cluster_mask]
+            # Get cluster pixels
+            om_cluster = om_chroma[cluster_mask]
+            cluster_ys = ys[cluster_mask]
+            cluster_xs = xs[cluster_mask]
             
+            # Histogram match each channel (a*, b*)
+            matched_cluster = np.zeros_like(om_cluster)
             for ch_idx in range(2):
-                om_vals = om_cluster_chroma[:, ch_idx]
+                om_vals = om_cluster[:, ch_idx]
                 rf_vals = rf_chroma[:, ch_idx]
 
+                # Sort for histogram matching
                 om_sorted = np.sort(om_vals)
                 rf_sorted = np.sort(rf_vals)
 
+                # Create CDFs
                 om_cdf = np.linspace(0, 1, len(om_sorted))
                 rf_cdf = np.linspace(0, 1, len(rf_sorted))
 
-                mapped_vals = np.interp(
+                # Map values through double interpolation
+                matched_cluster[:, ch_idx] = np.interp(
                     np.interp(om_vals, om_sorted, om_cdf),
                     rf_cdf, rf_sorted
                 )
-                
-                for i, (x, y) in enumerate(cluster_pixels):
-                    out_lab[y, x, ch_idx + 1] = mapped_vals[i]
+            
+            # SAFE: Use tuple indexing with arrays (creates new array, no corruption)
+            out_lab[cluster_ys, cluster_xs, 1:] = matched_cluster
 
         return out_lab
 
