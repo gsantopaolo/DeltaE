@@ -81,19 +81,19 @@ On-model (degraded) ─────┘     (Segformer)     (Hybrid LCh+OT)
 - Automatic mask erosion and feathering
 - No manual annotation required
 
-### 📊 **Comprehensive Metrics** (Bonus Points)
+### 📊 **Comprehensive Metrics**
 
 **Standard QC Metrics:**
 - ΔE2000 (median & P95) - Industry-standard color accuracy
 - SSIM (L-channel) - Texture preservation
 - Spill detection - Edge quality
 
-**Bonus Metric #1: Spatial Coherence Index (SCI)**
+**Spatial Coherence Index (SCI)**
 - Patch-level spatial quality analysis
 - Heatmap visualization showing WHERE corrections work
 - Identifies regional failures (shadows, highlights)
 
-**Bonus Metric #2: Triplet ΔE2000 Analysis**
+**Triplet ΔE2000 Analysis**
 - Quantitative before/after comparison
 - 4-panel visualizations (ref, original, corrected, diff map)
 - Summary tables with improvement statistics
@@ -307,12 +307,6 @@ If given more time, next steps would include:
 - **Segformer**: mattmdjaga/segformer_b2_clothes
 - **SAM 2**: Facebook AI Research
 - **Datasets**: VITON-HD, DeepFashion2
-
----
-
-## 📧 Contact
-
-For questions or feedback, please open an issue on GitHub.
 
 ---
 
