@@ -121,10 +121,10 @@ conda activate deltae
 
 # 3. Install dependencies
 pip install -r requirements.txt
-
+```
 # 4. Download sample data and weights
 [Link to Google Drive](https://drive.google.com/file/d/1xrt25bMnvq6dnl1xZSSW97zxY6l5u-eH/view?usp=sharing)
-```
+
 
 ### Usage
 
