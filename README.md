@@ -187,6 +187,12 @@ Summary: Average improvement of 46% across all images
 *SCI spatial heatmap: Green=excellent, Yellow=good, Orange=acceptable, Red=poor correction*
 
 #### Before/After Comparison
+<img src="docs/images/before_after_comparison.png" alt="Before/After Comparison">
+*Before/After Comparison 
+Left: Original degraded on-model image (ΔE = 4.18)  
+Right: Color-corrected result (ΔE = 0.21)  
+Improvement: 3.97 ΔE units (95.1% reduction in color error)*
+
 
 #### Console output
 ![Console Output](docs/images/console_output.png)
