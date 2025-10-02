@@ -13,7 +13,7 @@
 
 ## 📋 Table of Contents
 
-- [Problem Statement](#-problem-statement)
+- [The Problem](#-problem-statement)
 - [Solution Overview](#-solution-overview)
 - [Key Features](#-key-features)
 - [Quick Start](#-quick-start)
@@ -23,7 +23,7 @@
 
 ---
 
-## 🎯 Problem Statement
+## 🎯 The Problem
 
 **The Challenge:** In AI-generated fashion photography, ensuring exact color fidelity between the original product (still-life) and the generated on-model image is critical for commercial viability. Manual correction in Photoshop is slow, subjective, and doesn't scale.
 
@@ -32,13 +32,15 @@
 2. **Texture Preservation**: Maintains material appearance (linen stays linen, not plastic)
 3. **Precise Masking**: Only affects the garment, leaving skin/background untouched
 
-**The Commercial Impact:** This automation enables fashion brands to use AI-generated imagery at scale while maintaining the color accuracy required for e-commerce.
+**The Commercial Impact:** This automation enables fashion brands to use AI-generated imagery at 
+scale while maintaining the color accuracy required for e-commerce.
 
 ---
 
 ## 🚀 Solution Overview
 
-**DeltaE** implements a **hybrid color correction pipeline** combining computer vision techniques with advanced segmentation:
+**DeltaE** implements a **hybrid color correction pipeline** combining computer vision techniques 
+with advanced segmentation:
 
 ### Core Approach
 
@@ -166,27 +168,21 @@ See [Installation Guide](docs/installation.md) for detailed setup and parameter 
 ╭────────────┬─────────────┬────────────┬───────────────┬─────────────┬──────────╮
 │   Image ID │   ΔE Before │   ΔE After │   Improvement │ Improve %   │ Status   │
 ├────────────┼─────────────┼────────────┼───────────────┼─────────────┼──────────┤
-│      00000 │        2.73 │       1.58 │          1.15 │ 42.0%       │ ✅        │
-│      00001 │        3.51 │       1.99 │          1.52 │ 43.4%       │ ✅        │
-│      00002 │        1.50 │       0.59 │          0.91 │ 60.6%       │ ✅        │
+│      00000 │        2.73 │       1.58 │          1.15 │ 42.0%       │ ✅       │
+│      00001 │        3.51 │       1.99 │          1.52 │ 43.4%       │ ✅       │
+│      00002 │        1.50 │       0.59 │          0.91 │ 60.6%       │ ✅       │
 ╰────────────┴─────────────┴────────────┴───────────────┴─────────────┴──────────╯
 
 Summary: Average improvement of 46% across all images
 ```
 
 ### Visual Examples
-
-**[TODO: Add screenshot here - Triplet comparison showing reference, original, corrected, and difference map]**
-
 ![Triplet Comparison](docs/images/triplet_example.jpg)
 *Left to right: Reference (still-life), Original (before), Corrected (after), Difference Map*
-
-**[TODO: Add screenshot here - SCI spatial heatmap showing color-coded patch quality]**
 
 ![Spatial Heatmap](docs/images/sci_heatmap_example.jpg)
 *SCI spatial heatmap: Green=excellent, Yellow=good, Orange=acceptable, Red=poor correction*
 
-**[TODO: Add screenshot here - Console output showing summary table with tabulate formatting]**
 
 ![Console Output](docs/images/console_output.png)
 *Console summary table with triplet analysis results*
@@ -208,50 +204,6 @@ See [Evaluation Documentation](docs/evaluation.md) for complete metrics analysis
 - [Color Correction](docs/components/color.md) - Classical, OT, Hybrid algorithms
 - [Metrics & QC](docs/components/metrics.md) - ΔE, SSIM, SCI, Triplet Analysis
 - [Pipeline Orchestration](docs/components/pipeline.md) - Workflow, error handling
-
-### Screenshot Guide
-- **[SCREENSHOTS_NEEDED.md](docs/SCREENSHOTS_NEEDED.md)** - Guide for adding documentation images
-
----
-
-## 📁 Project Structure
-
-```
-DeltaE/
-├── README.md                  # This file
-├── requirements.txt           # Python dependencies
-├── configs/
-│   └── default.yaml          # Configuration (correction mode, thresholds, etc.)
-├── src/
-│   ├── main.py               # CLI entry point
-│   ├── color/                # Color correction algorithms
-│   │   ├── classical_lab.py  # LCh-based correction
-│   │   ├── ot_color_corrector.py  # OT histogram matching
-│   │   └── hybrid_corrector.py    # Hybrid (best performance)
-│   ├── masking/              # Segmentation and masking
-│   │   ├── base.py           # Abstract base classes
-│   │   ├── segformer_parser.py  # Semantic segmentation
-│   │   └── onmodel_pipeline.py  # Multi-strategy pipeline
-│   ├── metrics/              # Quality metrics
-│   │   ├── color_metrics.py  # ΔE2000, color distance
-│   │   ├── texture_metrics.py # SSIM (texture preservation)
-│   │   ├── spatial_coherence.py # SCI (spatial quality)
-│   │   └── triplet_analysis.py  # Before/after comparison
-│   ├── pipeline/             # Orchestration
-│   │   ├── orchestrator.py   # Main processing pipeline
-│   │   └── io.py             # Data loading and I/O
-│   ├── qc/                   # Quality control
-│   │   └── rules.py          # Pass/fail evaluation
-│   └── schemas/              # Configuration schemas
-│       └── config.py         # Pydantic models
-├── data/
-│   ├── dataset/              # Input image pairs
-│   ├── outputs/              # Corrected images + visualizations
-│   └── masks/                # Generated masks
-├── docs/                     # Documentation (see above)
-└── weights/                  # Model checkpoints (download separately)
-```
-
 ---
 
 ## 🛠️ Technical Stack
@@ -333,18 +285,14 @@ If given more time, next steps would include:
    - Perceptual studies (human-in-the-loop)
    - Brand-specific color palettes
    - Fabric-aware metrics
+5. **Scalability**
+   - Migrate to a microservice, event-driven design to scale indefinitely. If you want to see an example of an AI microservice, event-driven design custer, have a look at [Sentinel-AI](https://genmind.ch/posts/Sentinel-AI-Designing-a-Real-Time-Scalable-AI-Newsfeed/)
 
 ---
 
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
----
 
 ## 🙏 Acknowledgments
 
-- **Challenge by**: Shootify AI
 - **Segformer**: mattmdjaga/segformer_b2_clothes
 - **SAM 2**: Facebook AI Research
 - **Datasets**: VITON-HD, DeepFashion2
