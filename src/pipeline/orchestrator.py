@@ -12,6 +12,8 @@ from ..pipeline.io import Pair
 from ..masking.base import Masker
 from ..masking.stilllife_rembg_sam2 import StillLifeRembgMasker
 from ..color.classical_lab import ClassicalLabCorrector
+from ..color.ot_color_corrector import OptimalTransportCorrector
+from ..color.hybrid_corrector import HybridCorrector
 from ..metrics.color_metrics import deltaE_between_medians, deltaE_q_to_ref_median
 from ..metrics.texture_metrics import ssim_L
 from ..qc.rules import evaluate
@@ -29,7 +31,7 @@ def _feather_mask(bin_mask: np.ndarray, px: int) -> np.ndarray:
     """Return float32 alpha in [0,1], feathered but strictly confined to the original mask."""
     px = max(1, int(px))
     blurred = cv2.GaussianBlur(bin_mask, (0, 0), px).astype(np.float32) / 255.0
-    # 🔒 hard gate: no alpha outside the binary mask
+    # hard gate: no alpha outside the binary mask
     inside = (bin_mask > 0).astype(np.float32)
     return blurred * inside
 
@@ -51,12 +53,12 @@ def _make_on_model_masker(cfg: AppConfig, logger):
       2) Legacy OnModelColorPriorMasker (color-prior only) using cfg.masking.onmodel_color_prior
     """
     if _HAS_PIPELINE and hasattr(cfg.masking, "on_model"):
-        logger.info("🧠 Using OnModelMaskerPipeline (SCHP→SAM2→color-prior→heuristic)")
+        logger.info(" Using OnModelMaskerPipeline (SCHP→SAM2→color-prior→heuristic)")
         return OnModelMaskerPipeline(cfg.masking.on_model)  # type: ignore
 
     # Fallback: legacy color-prior masker
     from ..masking.onmodel_schp_sam2 import OnModelColorPriorMasker
-    logger.info("🎯 Using legacy OnModelColorPriorMasker (color-prior fallback)")
+    logger.info(" Using legacy OnModelColorPriorMasker (color-prior fallback)")
     return OnModelColorPriorMasker(cfg.masking.onmodel_color_prior)  # type: ignore[attr-defined]
 
 # Back-compat alias to avoid NameError if caller uses the other name
@@ -111,17 +113,39 @@ def run_pairs(
     # Build modules
     on_masker = _make_on_model_masker(cfg, logger)
     st_masker = StillLifeRembgMasker()
-    corrector = ClassicalLabCorrector(deltaE_target=cfg.color.deltaE_target)
+    
+    # Select corrector based on config
+    if cfg.color.mode == "ot":
+        logger.info("🎨 Using Optimal Transport color corrector (advanced)")
+        corrector = OptimalTransportCorrector(
+            deltaE_target=cfg.color.deltaE_target,
+            num_clusters=cfg.color.ot_num_clusters,
+            ot_reg=cfg.color.ot_reg,
+            use_clustering=cfg.color.ot_use_clustering,
+            min_cluster_size=cfg.color.ot_min_cluster_size,
+            max_samples=cfg.color.ot_max_samples,
+        )
+    elif cfg.color.mode == "hybrid":
+        logger.info("🎨 Using Hybrid color corrector (histogram + global shift)")
+        corrector = HybridCorrector(
+            deltaE_target=cfg.color.deltaE_target,
+            num_clusters=cfg.color.ot_num_clusters,
+            use_clustering=cfg.color.ot_use_clustering,
+            min_cluster_size=cfg.color.ot_min_cluster_size,
+        )
+    else:  # classical or fallback
+        logger.info("🎨 Using Classical LCh color corrector")
+        corrector = ClassicalLabCorrector(deltaE_target=cfg.color.deltaE_target)
 
     for i, p in enumerate(pairs, 1):
         try:
-            logger.info(f"🧩 [{i}] ID={p.id} | Loading images")
+            logger.info(f" [{i}] ID={p.id} | Loading images")
             om = cv2.imread(str(p.on_model), cv2.IMREAD_COLOR)
             st = cv2.imread(str(p.still_life), cv2.IMREAD_COLOR)
             if om is None or st is None:
                 raise RuntimeError("Failed to read one or both images.")
 
-            logger.info("🧥 Getting masks (on-model, still-life)…")
+            logger.info(" Getting masks (on-model, still-life)…")
             # Still-life mask + core
             st_mask = st_masker.get_mask(st)
             st_core = Masker.erode(st_mask, cfg.masking.erosion_px)
@@ -138,7 +162,7 @@ def run_pairs(
                              "min_mask_pixels",
                              2000)
             if int(om_core.sum() // 255) < int(min_px):
-                logger.warning(f"⚠️ [{i}] ID={p.id} on-model garment mask too small; skipping.")
+                logger.warning(f" [{i}] ID={p.id} on-model garment mask too small; skipping.")
                 cv2.imwrite(str(masks_dir / f"on-model-{p.id}.png"), om_mask)
                 cv2.imwrite(str(masks_dir / f"still-life-{p.id}.png"), st_mask)
                 continue
@@ -149,10 +173,10 @@ def run_pairs(
 
             # If mask-only mode, skip color stage & metrics
             if not write_corrected:
-                logger.info("🛑 Mask-only mode: skipping color correction & metrics.")
+                logger.info(" Mask-only mode: skipping color correction & metrics.")
                 continue
 
-            logger.info("🎛️ Color correcting (classical LCh + ΔE feedback)…")
+            logger.info(" Color correcting (classical LCh + ΔE feedback)…")
             corrected_inside = corrector.correct(
                 on_model_bgr=om,
                 on_model_mask_core=om_core,
@@ -195,13 +219,13 @@ def run_pairs(
             )
 
             logger.info(
-                f"📊 QC | ΔE_med={dE_med:.2f} ΔE_p95={dE_p95:.2f} "
+                f" QC | ΔE_med={dE_med:.2f} ΔE_p95={dE_p95:.2f} "
                 f"SSIM_L={ssim_val:.3f} spill={spill_med:.2f} → "
-                f"{'✅ PASS' if qc.passed else '❌ FAIL'}"
+                f"{' PASS' if qc.passed else ' FAIL'}"
             )
 
             # Write final corrected image
             cv2.imwrite(str(output_dir / f"corrected-on-model-{p.id}.jpg"), corrected)
 
         except Exception as e:
-            logger.error(f"❌ [{i}] ID={p.id} failed: {e}")
+            logger.error(f" [{i}] ID={p.id} failed: {e}")

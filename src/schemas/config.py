@@ -69,8 +69,15 @@ class MaskingConfig(BaseModel):
     on_model: OnModelMaskingConfig = Field(default_factory=OnModelMaskingConfig)
 
 class ColorConfig(BaseModel):
-    mode: Literal["classical", "lut", "diffusion"] = "classical"
+    mode: Literal["classical", "ot", "hybrid"] = "hybrid"
     deltaE_target: float = 2.0
+    
+    # OT (Optimal Transport) specific parameters
+    ot_num_clusters: int = 3  # Number of color clusters for multi-color garments
+    ot_reg: float = 0.01  # Entropic regularization for OT (higher = smoother)
+    ot_use_clustering: bool = True  # Enable multi-cluster mode for complex patterns
+    ot_min_cluster_size: int = 500  # Minimum pixels per cluster
+    ot_max_samples: int = 5000  # Max pixels for OT computation (prevents OOM)
 
 class QCConfig(BaseModel):
     max_deltaE_median: float = 3.0
