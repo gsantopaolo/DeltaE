@@ -67,6 +67,16 @@ color:
 
 qc:
   max_deltaE_median: 3.0
-  max_deltaE_p95: 60 # (accounts for shadows/highlights)
+  max_deltaE_p95: 60.0
   min_ssim_L: 0.90
   max_spill_deltaE: 0.5
+  
+  # Spatial Coherence Index (SCI) - Bonus metric for spatial quality analysis
+  enable_sci: true  # Compute patch-level spatial coherence
+  sci_patch_size: 32  # Size of square patches (in pixels)
+  sci_save_heatmap: true  # Set true to save color-coded heatmap images
+  
+  # Triplet Analysis - Quantitative proof of correction effectiveness
+  enable_triplet_analysis: true  # Compare still-life vs original vs corrected
+  save_triplet_table: true  # Save summary table as markdown file with datetime
+  save_triplet_visualization: true  # Save 4-panel images (ref, original, corrected, diff map)

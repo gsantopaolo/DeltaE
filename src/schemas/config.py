@@ -81,9 +81,19 @@ class ColorConfig(BaseModel):
 
 class QCConfig(BaseModel):
     max_deltaE_median: float = 3.0
-    max_deltaE_p95: float = 8.0
+    max_deltaE_p95: float = 60.0
     min_ssim_L: float = 0.90
     max_spill_deltaE: float = 0.5
+    
+    # Spatial Coherence Index (SCI) - Bonus metric
+    enable_sci: bool = True  # Compute spatial coherence metrics
+    sci_patch_size: int = 32  # Size of patches for spatial analysis
+    sci_save_heatmap: bool = True  # Save heatmap visualization to disk
+    
+    # Triplet Analysis - Quantitative proof of correction effectiveness
+    enable_triplet_analysis: bool = True  # Compare still-life vs original vs corrected
+    save_triplet_table: bool = True  # Save summary table as markdown file with datetime
+    save_triplet_visualization: bool = True  # Save 4-panel comparison images with difference maps
 
 class AppConfig(BaseModel):
     paths: PathsConfig

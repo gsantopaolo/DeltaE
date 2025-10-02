@@ -5,17 +5,21 @@ from pathlib import Path
 from typing import Iterable
 import numpy as np
 import cv2
+from datetime import datetime
 
 from ..schemas.config import AppConfig
 from ..utils.logging_utils import get_logger
 from ..pipeline.io import Pair
 from ..masking.base import Masker
 from ..masking.stilllife_rembg_sam2 import StillLifeRembgMasker
+from ..masking.onmodel_schp_sam2 import OnModelColorPriorMasker
 from ..color.classical_lab import ClassicalLabCorrector
 from ..color.ot_color_corrector import OptimalTransportCorrector
 from ..color.hybrid_corrector import HybridCorrector
 from ..metrics.color_metrics import deltaE_between_medians, deltaE_q_to_ref_median
 from ..metrics.texture_metrics import ssim_L
+from ..metrics.spatial_coherence import compute_spatial_coherence, create_heatmap_visualization, create_ascii_heatmap
+from ..metrics.triplet_analysis import compute_triplet_delta_e, format_triplet_table, create_triplet_visualization
 from ..qc.rules import evaluate
 
 # Prefer the new pipeline (SCHP→SAM2→color-prior→heuristic). If missing, we’ll fallback.
@@ -57,7 +61,6 @@ def _make_on_model_masker(cfg: AppConfig, logger):
         return OnModelMaskerPipeline(cfg.masking.on_model)  # type: ignore
 
     # Fallback: legacy color-prior masker
-    from ..masking.onmodel_schp_sam2 import OnModelColorPriorMasker
     logger.info(" Using legacy OnModelColorPriorMasker (color-prior fallback)")
     return OnModelColorPriorMasker(cfg.masking.onmodel_color_prior)  # type: ignore[attr-defined]
 
@@ -106,6 +109,9 @@ def run_pairs(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     masks_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Track triplet analysis results for summary table
+    triplet_summary_results = []
 
     # Optional mask-only mode (safe even if RunConfig doesn’t define it)
     write_corrected: bool = getattr(getattr(cfg, "run", object()), "write_corrected", True)
@@ -207,6 +213,35 @@ def run_pairs(
                 vals = dE[ring.astype(bool)]
                 spill_med = float(np.median(vals)) if vals.size else 0.0
 
+            # --- Spatial Coherence Index (SCI) - Bonus metric ---
+            sci_results = None
+            if cfg.qc.enable_sci:
+                from skimage.color import rgb2lab as rgb2lab_sk
+                st_rgb = cv2.cvtColor(st, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
+                st_lab = rgb2lab_sk(st_rgb)
+                
+                sci_results = compute_spatial_coherence(
+                    corrected_bgr=corrected,
+                    reference_lab=st_lab,
+                    reference_mask=st_core,
+                    mask=om_mask,
+                    patch_size=cfg.qc.sci_patch_size,
+                )
+                
+                if sci_results.get("valid", False):
+                    logger.info(
+                        f" SCI | Index={sci_results['sci']:.3f} "
+                        f"Good={sci_results['good_patches_pct']:.0f}% "
+                        f"Poor={sci_results['poor_patches_pct']:.0f}% "
+                        f"Worst=({sci_results['worst_patch_coord'][0]},{sci_results['worst_patch_coord'][1]}) ΔE={sci_results['worst_patch_dE']:.1f}"
+                    )
+                    
+                    # Optionally save heatmap visualization
+                    if cfg.qc.sci_save_heatmap:
+                        heatmap_path = str(output_dir / f"corrected-on-model-{p.id}-hm.jpg")
+                        create_heatmap_visualization(corrected, om_mask, sci_results, heatmap_path)
+                        logger.info(f" 🗺️  Spatial heatmap generated → corrected-on-model-{p.id}-hm.jpg")
+
             qc = evaluate(
                 dE_med if np.isfinite(dE_med) else 999.0,
                 dE_p95 if np.isfinite(dE_p95) else 999.0,
@@ -224,8 +259,72 @@ def run_pairs(
                 f"{' PASS' if qc.passed else ' FAIL'}"
             )
 
+            # --- Triplet Analysis - Quantitative proof of correction ---
+            if cfg.qc.enable_triplet_analysis:
+                triplet_results = compute_triplet_delta_e(
+                    still_life_bgr=st,
+                    still_life_mask=st_core,
+                    on_model_bgr=om,
+                    on_model_mask=om_core,
+                    corrected_bgr=corrected,
+                )
+                
+                if triplet_results.get("valid", False):
+                    improvement_icon = "✅" if triplet_results["improvement"] > 0 else "❌"
+                    logger.info(
+                        f" {improvement_icon} Triplet | Before={triplet_results['dE_still_vs_original']:.2f} "
+                        f"After={triplet_results['dE_still_vs_corrected']:.2f} "
+                        f"Improved={triplet_results['improvement']:.2f} ({triplet_results['improvement_pct']:.1f}%)"
+                    )
+                    
+                    # Store for summary table
+                    triplet_results["id"] = p.id
+                    triplet_summary_results.append(triplet_results)
+                    
+                    # Optionally save visualization
+                    if cfg.qc.save_triplet_visualization:
+                        viz_path = str(output_dir / f"corrected-on-model-{p.id}-triplet.jpg")
+                        create_triplet_visualization(
+                            still_life_bgr=st,
+                            on_model_bgr=om,
+                            corrected_bgr=corrected,
+                            on_model_mask=om_mask,
+                            image_id=p.id,
+                            output_path=viz_path,
+                        )
+                        logger.info(f" 🖼️  Triplet visualization → corrected-on-model-{p.id}-triplet.jpg")
+                    
             # Write final corrected image
             cv2.imwrite(str(output_dir / f"corrected-on-model-{p.id}.jpg"), corrected)
 
         except Exception as e:
             logger.error(f" [{i}] ID={p.id} failed: {e}")
+
+    # --- Generate Triplet Analysis Summary Table ---
+    if triplet_summary_results and cfg.qc.enable_triplet_analysis:
+        logger.info("")
+        logger.info("=" * 80)
+        logger.info("📊 TRIPLET ANALYSIS SUMMARY")
+        logger.info("=" * 80)
+        
+        # Display console table with nice formatting
+        console_table = format_triplet_table(triplet_summary_results, mode="console")
+        logger.info("")
+        for line in console_table.split('\n'):
+            logger.info(line)
+        logger.info("")
+        
+        # Save markdown table to file
+        if cfg.qc.save_triplet_table:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            table_filename = f"triplet_analysis_{timestamp}.md"
+            table_path = output_dir / table_filename
+            
+            markdown_table = format_triplet_table(triplet_summary_results, mode="markdown")
+            table_path.write_text(markdown_table)
+            
+            logger.info(f"📄 Summary table saved → {table_filename}")
+        
+        logger.info("=" * 80)
+
+    logger.info("🎉 Done.")
