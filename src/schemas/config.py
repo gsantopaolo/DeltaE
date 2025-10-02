@@ -15,24 +15,36 @@ class OnModelColorPriorConfig(BaseModel):
 
 class OnModelSCHPConfig(BaseModel):
     enabled: bool = True
-    weights_path: str = "weights/schp.pth"   # set to your checkpoint path
+    weights_path: str = "weights/checkpoints/exp-schp-201908261155-lip.pth"
+    model_name: str = "mattmdjaga/segformer_b2_clothes"  # HuggingFace model for Segformer
     device: Literal["cpu", "mps", "cuda"] = "mps"
     include_labels: List[str] = Field(
         default_factory=lambda: [
-            "upper-clothes", "coat", "dress", "jacket", "t-shirt", "vest", "hoodie", "cardigan", "blouse", "sweater"
+            "upper-clothes", "coat", "dress", "jacket", "t-shirt",
+            "vest", "hoodie", "cardigan", "blouse", "sweater"
         ]
     )
 
 class OnModelSAM2Config(BaseModel):
+    enabled: bool = False
+    checkpoint_path: str = "weights/sam2_hiera_base_plus.pt"
+    points_from_mask: bool = True
+    expand_box_px: int = 16
+
+# NEW: SAM v1 (Segment Anything) config
+class OnModelSAMV1Config(BaseModel):
     enabled: bool = True
-    checkpoint_path: str = "weights/sam2.pt"  # set to your checkpoint
+    checkpoint_path: str = "weights/sam/sam_vit_h_4b8939.pth"
+    model_type: Literal["vit_b", "vit_l", "vit_h"] = "vit_h"
     points_from_mask: bool = True
     expand_box_px: int = 16
 
 class OnModelMaskingConfig(BaseModel):
-    method_order: List[Literal["schp", "color_prior", "heuristic"]] = Field(default_factory=lambda: ["schp", "color_prior", "heuristic"])
+    method_order: List[Literal["schp", "sam_v1", "sam2", "color_prior", "heuristic"]] = \
+        Field(default_factory=lambda: ["schp", "sam_v1", "color_prior", "heuristic"])
     schp: OnModelSCHPConfig = Field(default_factory=OnModelSCHPConfig)
     sam2: OnModelSAM2Config = Field(default_factory=OnModelSAM2Config)
+    sam_v1: OnModelSAMV1Config = Field(default_factory=OnModelSAMV1Config)
     color_prior: OnModelColorPriorConfig = Field(default_factory=OnModelColorPriorConfig)
     use_crf: bool = False  # requires pydensecrf if True
 
@@ -46,15 +58,15 @@ class RunConfig(BaseModel):
     limit: int = 300
     num_workers: int = 2
     save_debug: bool = False
-    write_corrected: bool = True   # 👈 add this
-
+    write_corrected: bool = True  # <-- so YAML flag is honored
 
 class MaskingConfig(BaseModel):
     erosion_px: int = 2
     feather_px: int = 2
-    use_sam2_refine: bool = False  # kept for back-compat (unused now)
+    # legacy/back-compat
+    onmodel_color_prior: OnModelColorPriorConfig = Field(default_factory=OnModelColorPriorConfig)
+    # new unified on-model block
     on_model: OnModelMaskingConfig = Field(default_factory=OnModelMaskingConfig)
-    onmodel_color_prior: OnModelColorPriorConfig = Field(default_factory=OnModelColorPriorConfig)  # back-compat
 
 class ColorConfig(BaseModel):
     mode: Literal["classical", "lut", "diffusion"] = "classical"

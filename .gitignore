@@ -206,12 +206,20 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+/weights
+weights
+weights/
+/weights/
+
+
 # ignore data path
 data/
 excluded/
+third_party/
 deployment/data
 .idea/
 
 server.txt
 /deployment/Users/
 /deployment/servers.json/
+

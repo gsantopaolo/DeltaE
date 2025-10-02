@@ -8,11 +8,12 @@ run:
   limit: 10
   num_workers: 1
   save_debug: false
-  write_corrected: false   # 👈 set to false if you want MASK-ONLY runs
+  write_corrected: true   # set to false if you want MASK-ONLY runs
 
 masking:
   erosion_px: 2
   feather_px: 2
+
 
   # New on-model pipeline config (SCHP→SAM2→color-prior→heuristic).
   # If SCHP/SAM2 aren’t set up, it will gracefully fallback to color-prior.
@@ -20,19 +21,31 @@ masking:
     method_order: ["schp", "color_prior", "heuristic"]
     schp:
       enabled: true
-      weights_path: "weights/schp.pth"   # put your TorchScript or change path; if missing it falls back
-      device: "mps"
+      weights_path: "weights/exp-schp-201908261155-lip.pth"
+      model_name: "mattmdjaga/segformer_b2_clothes"  # HuggingFace Segformer model (no compilation needed!)
+      # Alternative models:
+      # model_name: "mattmdjaga/segformer_b0_clothes"  # Fastest, lower accuracy (~80MB, ~2s/image)
+      # model_name: "mattmdjaga/segformer_b2_clothes"  # Balanced (default) (~150MB, ~3s/image)
+      # model_name: "mattmdjaga/segformer_b4_clothes"  # Best accuracy, slower (~250MB, ~5s/image)
+      # Any ATR/LIP fine-tuned Segformer from HuggingFace Hub also works
+      device: "mps"  # "mps" for Mac M2, "cuda" for NVIDIA, "cpu" for fallback
       include_labels: ["upper-clothes","coat","dress","jacket","t-shirt","vest","hoodie","cardigan","blouse","sweater"]
     sam2:
-      enabled: true
-      checkpoint_path: "weights/sam2.pt" # if not present, refinement is skipped
+      enabled: false # disabled for mac works only on cuda, enable only if you have CUDA
+      checkpoint_path: weights/sam_vit_h_4b8939.pth" #"weights/sam2_hiera_base_plus.pt"
+      points_from_mask: true
+      expand_box_px: 16
+    sam_v1:
+      enabled: true # enable this instead of sam2 on mps
+      checkpoint_path: "weights/sam_vit_h_4b8939.pth"
+      model_type: "vit_h"   # vit_b / vit_l / vit_h
       points_from_mask: true
       expand_box_px: 16
     color_prior:
       tau_base: 12.0
       tau_k: 3.0
       dilate_px: 1
-      min_mask_pixels: 2000
+      min_mask_pixels: 5000 #2000
       neutral_chroma_thresh: 10.0
       l_gate_lo: -12.0
       l_gate_hi: 18.0
@@ -46,8 +59,6 @@ color:
 
 qc:
   max_deltaE_median: 3.0
-  max_deltaE_p95: 8.0
+  max_deltaE_p95: 60 # (accounts for shadows/highlights)
   min_ssim_L: 0.90
   max_spill_deltaE: 0.5
-
-

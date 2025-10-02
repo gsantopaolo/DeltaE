@@ -22,6 +22,15 @@ onnxruntime>=1.17; platform_system!="Linux"
 torch==2.8.0
 torchvision
 
+gdown
+huggingface_hub
+git+https://github.com/facebookresearch/sam2.git
+yacs
+sam2
+
+# --- Human Parsing (Segformer) ---
+transformers>=4.30.0
+
 # --- Optional (advanced approaches) ---
 # diffusers>=0.28
 # transformers>=4.43
