@@ -19,13 +19,11 @@ Comprehensive analysis of quality metrics, validation results, and bonus metric 
 
 ### Challenge Requirements
 
-The code challenge specified three key requirements:
+The challenge specified three key requirements:
 
 1. **Color Accuracy**: Precise match to reference still-life
 2. **Texture Preservation**: Material appearance must be maintained
 3. **Masking Precision**: Only garment affected, no spill
-
-**Bonus Points**: Include metrics and discuss what they can/cannot capture.
 
 ### Our Evaluation Strategy
 

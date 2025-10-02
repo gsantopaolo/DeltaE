@@ -54,13 +54,7 @@ conda activate deltae
 pip install -r requirements.txt
 ```
 
-**Key Dependencies:**
-- `torch==2.8.0` - PyTorch with MPS/CUDA support
-- `transformers>=4.30.0` - Segformer model
-- `opencv-python>=4.9.0` - Image processing
-- `scikit-image>=0.22` - Color science
-- `POT>=0.9.0` - Optimal Transport
-- `tabulate>=0.9.0` - Table formatting
+
 
 ### 4. Verify Installation
 
@@ -107,18 +101,6 @@ DeltaE/
 
 ### Alternative: Download Weights Programmatically
 
-```bash
-# SAM 2 checkpoint (optional, for future refinement)
-python - <<'PY'
-from huggingface_hub import hf_hub_download
-hf_hub_download("facebook/sam2-hiera-base-plus", 
-                "sam2_hiera_base_plus.pt", 
-                local_dir="weights")
-PY
-
-# Segformer (downloads automatically on first run)
-# No manual download needed
-```
 
 ---
 
@@ -253,57 +235,6 @@ color:
 
 ---
 
-## Troubleshooting
-
-### Common Issues
-
-#### 1. MPS Not Available (Mac)
-
-```bash
-# Check PyTorch version
-python -c "import torch; print(torch.__version__)"
-
-# Reinstall PyTorch with MPS support
-pip install torch==2.8.0 torchvision
-```
-
-#### 2. CUDA Out of Memory
-
-```yaml
-# Reduce OT samples in config
-color:
-  ot_max_samples: 2000  # Lower from 5000
-```
-
-#### 3. Segformer Model Download Fails
-
-```bash
-# Manual download
-python - <<'PY'
-from transformers import AutoImageProcessor, AutoModelForSemanticSegmentation
-model = AutoModelForSemanticSegmentation.from_pretrained("mattmdjaga/segformer_b2_clothes")
-model.save_pretrained("weights/segformer_b2_clothes")
-PY
-
-# Update config to use local path
-```
-
-#### 4. Tabulate Import Error
-
-```bash
-pip install tabulate>=0.9.0
-```
-
-#### 5. Images Not Found
-
-```bash
-# Check directory structure
-ls -la data/dataset/
-
-# Expected naming: {ID}_still-life.jpg and {ID}_on-model.jpg
-# Example: 00000_still-life.jpg, 00000_on-model.jpg
-```
-
 ### Performance Optimization
 
 **For faster processing:**
@@ -339,4 +270,3 @@ After installation:
 
 ---
 
-**Need help?** Open an issue on GitHub or consult the troubleshooting section above.
